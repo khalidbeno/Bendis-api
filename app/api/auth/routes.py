@@ -1,22 +1,42 @@
-from fastapi import APIRouter
-# Validacion de datos
-from app.schemas.auth import (
-    RegisterRequest,
-    RegisterResponse,
-    LoginRequest,
-    LoginResponse,
-)
-# Logica
-from app.services.auth_service import register_user, login_user
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
+from app.schemas.auth import RegisterRequest, LoginRequest
+from app.services.auth_service import register_user, login_user
+from app.db.session import get_db
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-@router.post("/register", response_model=RegisterResponse)
-def register(data: RegisterRequest):
-    return register_user(data)
+
+@router.post("/register")
+def register(data: RegisterRequest, db: Session = Depends(get_db)):
+    try:
+        user = register_user(
+            db=db,
+            username=data.username,
+            email=data.email,
+            password=data.password
+        )
+        return {
+            "message": "User registered successfully",
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email
+            }
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/login", response_model=LoginResponse)
-def login(data: LoginRequest):
-    return login_user(data)
+@router.post("/login")
+def login(data: LoginRequest, db: Session = Depends(get_db)):
+    try:
+        result = login_user(
+            db=db,
+            email=data.email,
+            password=data.password
+        )
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=str(e))

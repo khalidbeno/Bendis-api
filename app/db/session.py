@@ -2,6 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
 
+# Create conexion + Session
 engine = create_engine(settings.DATABASE_URL, echo=True)
 
 SessionLocal = sessionmaker(
