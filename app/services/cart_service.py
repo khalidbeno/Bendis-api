@@ -1,29 +1,36 @@
-from app.schemas.cart import (
-    CartResponse,
-    CartItemResponse,
-    AddToCartRequest,
-    RemoveFromCartResponse,
+from sqlalchemy.orm import Session
+
+from app.repositories.cart_repository import (
+    get_cart_by_user,
+    create_cart,
+    get_cart_items,
+    add_product_to_cart,
+    remove_cart_item
 )
 
 
-def get_cart() -> CartResponse:
-    return CartResponse(
-        items=[
-            CartItemResponse(id=1, product_id=1, quantity=2),
-            CartItemResponse(id=2, product_id=2, quantity=1),
-        ]
-    )
+def get_user_cart(db: Session, user_id: int):
+    cart = get_cart_by_user(db, user_id)
+
+    if not cart:
+        cart = create_cart(db, user_id)
+
+    items = get_cart_items(db, cart.id)
+
+    return {
+        "cart_id": cart.id,
+        "items": items
+    }
 
 
-def add_item_to_cart(data: AddToCartRequest) -> CartItemResponse:
-    return CartItemResponse(
-        id=3,
-        product_id=data.product_id,
-        quantity=data.quantity,
-    )
+def add_to_cart(db: Session, user_id: int, product_id: int, quantity: int):
+    cart = get_cart_by_user(db, user_id)
+
+    if not cart:
+        cart = create_cart(db, user_id)
+
+    return add_product_to_cart(db, cart.id, product_id, quantity)
 
 
-def remove_item_from_cart(item_id: int) -> RemoveFromCartResponse:
-    return RemoveFromCartResponse(
-        message=f"Item {item_id} removed from cart"
-    )
+def remove_from_cart(db: Session, item_id: int):
+    remove_cart_item(db, item_id)

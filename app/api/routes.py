@@ -1,7 +1,14 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
-router = APIRouter()
+from app.utils.dependencies import get_current_user
 
-@router.get("/")
-def root():
-    return {"message": "Bendis API running"}
+router = APIRouter(prefix="/users", tags=["users"])
+
+
+@router.get("/me")
+def get_me(current_user = Depends(get_current_user)):
+    return {
+        "id": current_user.id,
+        "username": current_user.username,
+        "email": current_user.email
+    }

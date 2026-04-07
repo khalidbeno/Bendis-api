@@ -1,61 +1,44 @@
-from app.schemas.products import (
-    ProductResponse,
-    CreateProductRequest,
-    UpdateProductRequest,
-    DeleteProductResponse,
+from sqlalchemy.orm import Session
+
+from app.repositories.product_repository import (
+    get_all_products,
+    get_product_by_id,
+    create_product,
+    update_product,
+    delete_product,
 )
 
 
-def get_all_products() -> list[ProductResponse]:
-    return [
-        ProductResponse(
-            id=1,
-            name="Bendis Fresh",
-            description="Urinal deodorizer with fresh scent",
-            price=9.99,
-            stock=100
-        ),
-        ProductResponse(
-            id=2,
-            name="Bendis Citrus",
-            description="Urinal deodorizer with citrus scent",
-            price=10.99,
-            stock=80
-        )
-    ]
+def list_products(db: Session):
+    return get_all_products(db)
 
 
-def get_product_by_id(product_id: int) -> ProductResponse:
-    return ProductResponse(
-        id=product_id,
-        name="Bendis Fresh",
-        description="Urinal deodorizer with fresh scent",
-        price=9.99,
-        stock=100
-    )
+def get_product(db: Session, product_id: int):
+    product = get_product_by_id(db, product_id)
+
+    if not product:
+        raise ValueError("Product not found")
+
+    return product
 
 
-def create_product(data: CreateProductRequest) -> ProductResponse:
-    return ProductResponse(
-        id=3,
-        name=data.name,
-        description=data.description,
-        price=data.price,
-        stock=data.stock
-    )
+def create_new_product(db: Session, name: str, description: str, price: float):
+    return create_product(db, name, description, price)
 
 
-def update_product(product_id: int, data: UpdateProductRequest) -> ProductResponse:
-    return ProductResponse(
-        id=product_id,
-        name=data.name,
-        description=data.description,
-        price=data.price,
-        stock=data.stock
-    )
+def update_existing_product(db: Session, product_id: int, name: str, description: str, price: float):
+    product = get_product_by_id(db, product_id)
+
+    if not product:
+        raise ValueError("Product not found")
+
+    return update_product(db, product, name, description, price)
 
 
-def delete_product(product_id: int) -> DeleteProductResponse:
-    return DeleteProductResponse(
-        message=f"Product with id {product_id} deleted successfully"
-    )
+def delete_existing_product(db: Session, product_id: int):
+    product = get_product_by_id(db, product_id)
+
+    if not product:
+        raise ValueError("Product not found")
+
+    delete_product(db, product)

@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.repositories.user_repository import get_user_by_email, create_user
-from app.core.security import hash_password, verify_password
+from app.core.security import hash_password, verify_password, create_access_token
 
 
 def register_user(db: Session, username: str, email: str, password: str):
@@ -31,11 +31,14 @@ def login_user(db: Session, email: str, password: str):
     if not verify_password(password, user.password):
         raise ValueError("Invalid credentials")
 
-    return {
-        "message": "Login successful",
-        "user": {
-            "id": user.id,
-            "username": user.username,
-            "email": user.email
+    access_token = create_access_token(
+        data={
+            "sub": user.email,
+            "user_id": user.id
         }
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
     }

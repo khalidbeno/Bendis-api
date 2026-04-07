@@ -1,23 +1,27 @@
-from app.schemas.payments import (
-    CreatePaymentRequest,
-    PaymentResponse,
-    ConfirmPaymentRequest,
-    ConfirmPaymentResponse,
-)
+from sqlalchemy.orm import Session
+
+from app.repositories.order_repository import get_order_by_id
+from app.repositories.payment_repository import create_payment
 
 
-def create_payment(data: CreatePaymentRequest) -> PaymentResponse:
-    return PaymentResponse(
-        payment_id=1,
-        order_id=data.order_id,
-        amount=data.amount,
-        status="pending"
-    )
+def process_payment(db: Session, user_id: int, order_id: int):
+    order = get_order_by_id(db, order_id)
 
+    if not order:
+        raise ValueError("Order not found")
 
-def confirm_payment(data: ConfirmPaymentRequest) -> ConfirmPaymentResponse:
-    return ConfirmPaymentResponse(
-        message="Payment confirmed successfully",
-        payment_id=data.payment_id,
-        status="paid"
-    )
+    if order.user_id != user_id:
+        raise ValueError("Not authorized")
+
+    if order.status == "paid":
+        raise ValueError("Order already paid")
+
+    # Aquí podrías calcular total real (de momento fake)
+    amount = 100.0
+
+    payment = create_payment(db, order_id, amount)
+
+    order.status = "paid"
+    db.commit()
+
+    return payment

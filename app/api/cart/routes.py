@@ -1,29 +1,30 @@
-from fastapi import APIRouter
-from app.schemas.cart import (
-    CartResponse,
-    CartItemResponse,
-    AddToCartRequest,
-    RemoveFromCartResponse,
-)
-from app.services.cart_service import (
-    get_cart,
-    add_item_to_cart,
-    remove_item_from_cart,
-)
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from app.db.session import get_db
+from app.utils.dependencies import get_current_user
+from app.schemas.cart import AddToCartRequest
+from app.services.cart_service import get_user_cart, add_to_cart, remove_from_cart
 
 router = APIRouter(prefix="/cart", tags=["cart"])
 
 
-@router.get("", response_model=CartResponse)
-def get_user_cart():
-    return get_cart()
+@router.get("")
+def get_cart(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    return get_user_cart(db, current_user.id)
 
 
-@router.post("/items", response_model=CartItemResponse)
-def add_to_cart(data: AddToCartRequest):
-    return add_item_to_cart(data)
+@router.post("/items")
+def add_item(data: AddToCartRequest, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    return add_to_cart(
+        db=db,
+        user_id=current_user.id,
+        product_id=data.product_id,
+        quantity=data.quantity
+    )
 
 
-@router.delete("/items/{item_id}", response_model=RemoveFromCartResponse)
-def remove_from_cart(item_id: int):
-    return remove_item_from_cart(item_id)
+@router.delete("/items/{item_id}")
+def remove_item(item_id: int, db: Session = Depends(get_db)):
+    remove_from_cart(db, item_id)
+    return {"message": "Item removed"}
